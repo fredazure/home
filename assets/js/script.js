@@ -1,6 +1,6 @@
 document.addEventListener("DOMContentLoaded", function() {
     console.log("Scriptet körs!");
-    fetch("assets/blogposts/blog.json")
+    fetch("../blogposts/blog.json")
         .then(response => response.json())
         .then(data => {
             const blogContainer = document.getElementById("blog-posts");
