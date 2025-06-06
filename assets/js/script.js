@@ -1,8 +1,7 @@
-console.log("Script.js laddat!");
-document.addEventListener("DOMContentLoaded", function() {
-    const blogContainer = document.getElementById("blogposts");
+window.onload = function() {
+    const blogContainer = document.getElementById("blog-posts");
     if (!blogContainer) {
-        console.error("Fel: Elementet #blogposts hittades inte!");
+        console.error("Fel: Elementet #blog-posts hittades inte!");
         return;
     }
 
@@ -18,4 +17,4 @@ document.addEventListener("DOMContentLoaded", function() {
             });
         })
         .catch(error => console.error("Fel vid inläsning av bloggen:", error));
-});
+};
