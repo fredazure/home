@@ -1,3 +1,4 @@
+console.log("Script.js laddat!");
 document.addEventListener("DOMContentLoaded", function() {
     const blogContainer = document.getElementById("blogposts");
     if (!blogContainer) {
