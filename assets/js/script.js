@@ -1,8 +1,13 @@
 document.addEventListener("DOMContentLoaded", function() {
+    const blogContainer = document.getElementById("blogposts");
+    if (!blogContainer) {
+        console.error("Fel: Elementet #blogposts hittades inte!");
+        return;
+    }
+
     fetch("assets/blogposts/blog.json")
         .then(response => response.json())
         .then(data => {
-            const blogContainer = document.getElementById("blog-posts");
             data.forEach(post => {
                 let postElement = document.createElement("div");
                 postElement.innerHTML = `<h2>${post.title}</h2>
