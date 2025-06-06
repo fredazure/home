@@ -1,6 +1,5 @@
 document.addEventListener("DOMContentLoaded", function() {
-    console.log("Scriptet körs!");
-    fetch("https://fredazure.github.io/home/assets/blogposts/blog.json")
+    fetch("blog.json")
         .then(response => response.json())
         .then(data => {
             const blogContainer = document.getElementById("blog-posts");
