@@ -1,4 +1,5 @@
 document.addEventListener("DOMContentLoaded", function() {
+    console.log("Scriptet körs!");
     fetch("assets/blogposts/blog.json")
         .then(response => response.json())
         .then(data => {
