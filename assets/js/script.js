@@ -5,7 +5,7 @@ window.onload = function() {
         return;
     }
 
-    fetch("assets/blogposts/blog.json?v=" + new Date().getTime())")
+    fetch("assets/blogposts/blog.json?v=" + new Date().getTime())
         .then(response => response.json())
         .then(data => {
             data.forEach(post => {
