@@ -1,0 +1,998 @@
+<!DOCTYPE html>
+<html lang="sv">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Smart Chatbot</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            background: linear-gradient(135deg, #000000 0%, #1a1a00 100%);
+            color: #ffff00;
+            font-family: 'Arial', sans-serif;
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            position: relative;
+            overflow: hidden;
+        }
+
+        /* Animated background particles */
+        .particles {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 0;
+        }
+
+        .particle {
+            position: absolute;
+            width: 2px;
+            height: 2px;
+            background: #ffff00;
+            border-radius: 50%;
+            animation: float 6s infinite linear;
+            opacity: 0.3;
+        }
+
+        @keyframes float {
+            0% { transform: translateY(100vh) translateX(0px); opacity: 0; }
+            10% { opacity: 0.3; }
+            90% { opacity: 0.3; }
+            100% { transform: translateY(-100px) translateX(100px); opacity: 0; }
+        }
+
+        .chat-container {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            max-width: 800px;
+            margin: 0 auto;
+            width: 100%;
+            padding: 20px;
+            position: relative;
+            z-index: 1;
+        }
+
+        .chat-header {
+            text-align: center;
+            padding: 20px 0;
+            border-bottom: 2px solid #ffff00;
+            margin-bottom: 20px;
+            background: rgba(0,0,0,0.8);
+            border-radius: 10px 10px 0 0;
+            position: relative;
+        }
+
+        .chat-header h1 {
+            font-size: 2em;
+            margin-bottom: 10px;
+            text-shadow: 0 0 10px rgba(255,255,0,0.5);
+        }
+
+        .chat-header p {
+            opacity: 0.8;
+            font-size: 0.9em;
+        }
+
+        .status-bar {
+            position: absolute;
+            top: 5px;
+            right: 10px;
+            font-size: 0.7em;
+            opacity: 0.6;
+        }
+
+        .feature-toggles {
+            display: flex;
+            justify-content: center;
+            gap: 10px;
+            margin-top: 10px;
+            flex-wrap: wrap;
+        }
+
+        .toggle-btn {
+            background: rgba(255,255,0,0.1);
+            border: 1px solid #ffff00;
+            color: #ffff00;
+            padding: 5px 10px;
+            border-radius: 15px;
+            cursor: pointer;
+            font-size: 0.8em;
+            transition: all 0.3s ease;
+        }
+
+        .toggle-btn.active {
+            background: #ffff00;
+            color: #000000;
+            box-shadow: 0 0 10px rgba(255,255,0,0.3);
+        }
+
+        .chat-messages {
+            flex: 1;
+            overflow-y: auto;
+            padding: 20px 0;
+            scroll-behavior: smooth;
+            background: rgba(0,0,0,0.3);
+            border-radius: 10px;
+            padding: 20px;
+            backdrop-filter: blur(5px);
+        }
+
+        .message {
+            margin-bottom: 20px;
+            padding: 15px;
+            border-radius: 10px;
+            max-width: 80%;
+            position: relative;
+            animation: slideIn 0.3s ease-out;
+            backdrop-filter: blur(10px);
+        }
+
+        @keyframes slideIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .user-message {
+            background: rgba(51,51,0,0.8);
+            margin-left: auto;
+            border: 1px solid #ffff00;
+            box-shadow: 0 4px 15px rgba(255,255,0,0.1);
+        }
+
+        .bot-message {
+            background: rgba(17,17,17,0.9);
+            border: 1px solid #ffff00;
+            margin-right: auto;
+            box-shadow: 0 4px 15px rgba(255,255,0,0.1);
+        }
+
+        .message-content {
+            margin-bottom: 10px;
+            line-height: 1.5;
+        }
+
+        .message-meta {
+            font-size: 0.7em;
+            opacity: 0.6;
+            margin-top: 8px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .confidence-bar {
+            width: 50px;
+            height: 3px;
+            background: rgba(255,255,0,0.2);
+            border-radius: 2px;
+            overflow: hidden;
+        }
+
+        .confidence-fill {
+            height: 100%;
+            background: #ffff00;
+            transition: width 0.5s ease;
+        }
+
+        .suggestions {
+            margin-top: 15px;
+        }
+
+        .suggestion-button {
+            background: rgba(255,255,0,0.9);
+            color: #000000;
+            border: none;
+            padding: 8px 12px;
+            margin: 5px 5px 5px 0;
+            border-radius: 15px;
+            cursor: pointer;
+            font-size: 0.9em;
+            transition: all 0.3s ease;
+            box-shadow: 0 2px 10px rgba(255,255,0,0.2);
+        }
+
+        .suggestion-button:hover {
+            background: #ffff00;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 20px rgba(255,255,0,0.3);
+        }
+
+        .input-container {
+            display: flex;
+            gap: 10px;
+            padding: 20px 0;
+            border-top: 2px solid #ffff00;
+            background: rgba(0,0,0,0.8);
+            border-radius: 0 0 10px 10px;
+            position: relative;
+        }
+
+        .input-features {
+            position: absolute;
+            top: -30px;
+            left: 0;
+            display: flex;
+            gap: 5px;
+        }
+
+        .feature-btn {
+            background: rgba(255,255,0,0.1);
+            border: 1px solid #ffff00;
+            color: #ffff00;
+            padding: 3px 8px;
+            border-radius: 3px;
+            cursor: pointer;
+            font-size: 0.7em;
+            transition: all 0.3s ease;
+        }
+
+        .feature-btn:hover, .feature-btn.active {
+            background: #ffff00;
+            color: #000000;
+        }
+
+        .chat-input {
+            flex: 1;
+            background: rgba(17,17,17,0.9);
+            border: 2px solid #ffff00;
+            color: #ffff00;
+            padding: 12px;
+            border-radius: 5px;
+            font-size: 1em;
+            font-family: inherit;
+            backdrop-filter: blur(10px);
+        }
+
+        .chat-input:focus {
+            outline: none;
+            box-shadow: 0 0 20px rgba(255, 255, 0, 0.3);
+        }
+
+        .send-button {
+            background: linear-gradient(135deg, #ffff00 0%, #cccc00 100%);
+            color: #000000;
+            border: none;
+            padding: 12px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-weight: bold;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 15px rgba(255,255,0,0.2);
+        }
+
+        .send-button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 25px rgba(255,255,0,0.3);
+        }
+
+        .send-button:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .typing-indicator {
+            display: none;
+            padding: 15px;
+            font-style: italic;
+            opacity: 0.7;
+            background: rgba(17,17,17,0.6);
+            border-radius: 10px;
+            margin: 10px 0;
+            backdrop-filter: blur(5px);
+        }
+
+        .mood-indicator {
+            position: absolute;
+            top: 10px;
+            left: 10px;
+            font-size: 2em;
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { transform: scale(1); opacity: 0.7; }
+            50% { transform: scale(1.1); opacity: 1; }
+        }
+
+        .weather-widget {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            background: rgba(0,0,0,0.7);
+            padding: 10px;
+            border-radius: 10px;
+            font-size: 0.8em;
+            backdrop-filter: blur(10px);
+        }
+
+        .stats-panel {
+            display: none;
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: rgba(0,0,0,0.95);
+            border: 2px solid #ffff00;
+            border-radius: 15px;
+            padding: 20px;
+            z-index: 1000;
+            max-width: 400px;
+            backdrop-filter: blur(20px);
+        }
+
+        .close-btn {
+            position: absolute;
+            top: 10px;
+            right: 15px;
+            background: none;
+            border: none;
+            color: #ffff00;
+            font-size: 1.5em;
+            cursor: pointer;
+        }
+
+        @media (max-width: 600px) {
+            .chat-container {
+                padding: 10px;
+            }
+            
+            .message {
+                max-width: 95%;
+            }
+            
+            .chat-header h1 {
+                font-size: 1.5em;
+            }
+
+            .feature-toggles {
+                gap: 5px;
+            }
+
+            .toggle-btn {
+                padding: 3px 6px;
+                font-size: 0.7em;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="particles" id="particles"></div>
+    
+    <div class="chat-container">
+        <div class="chat-header">
+            <div class="status-bar" id="statusBar">Online • <span id="timeStamp"></span></div>
+            <div class="mood-indicator" id="moodIndicator">🤖</div>
+            <h1>🧠 Smart Chatbot</h1>
+            <p>AI-driven konversation med avancerade funktioner</p>
+            
+            <div class="feature-toggles">
+                <button class="toggle-btn active" id="smartMode" onclick="toggleFeature('smart')">🧠 Smart Mode</button>
+                <button class="toggle-btn" id="memoryMode" onclick="toggleFeature('memory')">💾 Minne</button>
+                <button class="toggle-btn" id="creativeMode" onclick="toggleFeature('creative')">🎨 Kreativ</button>
+                <button class="toggle-btn" id="helpMode" onclick="toggleFeature('help')">❓ Hjälp</button>
+                <button class="toggle-btn" id="statsBtn" onclick="showStats()">📊 Stats</button>
+            </div>
+        </div>
+
+        <div class="weather-widget" id="weatherWidget">
+            🌤️ Göteborg: <span id="weatherInfo">Laddar...</span>
+        </div>
+
+        <div class="chat-messages" id="chatMessages">
+            <div class="message bot-message">
+                <div class="message-content">
+                    Hej! Jag är din smarta chatbot med avancerade funktioner. Jag kan komma ihåg våra samtal, vara kreativ, hjälpa med matematik och mycket mer! Vad vill du prata om?
+                </div>
+                <div class="message-meta">
+                    <span>Bot • Nu</span>
+                    <div class="confidence-bar"><div class="confidence-fill" style="width: 95%"></div></div>
+                </div>
+            </div>
+        </div>
+
+        <div class="typing-indicator" id="typingIndicator">
+            <span class="typing-dots">Chatbot tänker</span>
+        </div>
+
+        <div class="input-container">
+            <div class="input-features">
+                <button class="feature-btn" id="mathBtn" onclick="toggleMath()" title="Matematik aktivt">📊</button>
+                <button class="feature-btn" id="weatherBtn" onclick="getWeather()" title="Väder info">🌤️</button>
+                <button class="feature-btn" id="timeBtn" onclick="getTime()" title="Tid & datum">🕒</button>
+                <button class="feature-btn" id="clearBtn" onclick="clearChat()" title="Rensa chat">🗑️</button>
+            </div>
+            <input type="text" class="chat-input" id="chatInput" placeholder="Skriv din fråga här... (prova: 'vad är 15*23', 'berätta en historia', 'kom ihåg att jag heter Anna')" maxlength="500">
+            <button class="send-button" id="sendButton">Skicka</button>
+        </div>
+    </div>
+
+    <div class="stats-panel" id="statsPanel">
+        <button class="close-btn" onclick="hideStats()">×</button>
+        <h3>📊 Chattstatistik</h3>
+        <div id="statsContent">
+            <p>Meddelanden skickade: <span id="messageCount">0</span></p>
+            <p>Genomsnittlig svarstid: <span id="avgResponseTime">0</span>ms</p>
+            <p>Favoritämne: <span id="favoriteTopics">-</span></p>
+            <p>Aktiverade funktioner: <span id="activeFeatures">Smart Mode</span></p>
+            <p>Sessionstid: <span id="sessionTime">0</span> min</p>
+        </div>
+    </div>
+
+    <script>
+        // Enhanced knowledge base with categories and smart features
+        const knowledgeBase = [
+            {
+                question: "vad heter du",
+                answer: "Jag heter Smart Chatbot! Jag har många avancerade funktioner som minne, kreativitet och problemlösning. Vad heter du?",
+                keywords: ["namn", "heter", "vem är du", "identitet"],
+                category: "identity",
+                confidence: 0.95
+            },
+            {
+                question: "matematik",
+                answer: "Jag kan hjälpa dig med matematik! Prova att skriva en uträkning som '15 + 23' eller 'vad är kvadratroten ur 144'.",
+                keywords: ["matematik", "matte", "räkna", "beräkna", "plus", "minus", "gånger", "delat"],
+                category: "math",
+                confidence: 0.9
+            },
+            {
+                question: "kreativ berättelse",
+                answer: "Här kommer en kort berättelse: I en värld där robotar och människor levde sida vid sida, fanns det en liten chatbot som drömde om att skriva poesi. Varje dag övade den på att hitta de perfekta orden, tills en dag när den skapade sitt första mästerverk - en dikt om vänskap mellan kod och känslor.",
+                keywords: ["berättelse", "historia", "saga", "kreativ", "skriv", "dikt", "poesi"],
+                category: "creative",
+                confidence: 0.85
+            },
+            {
+                question: "väder",
+                answer: "Jag kan inte hämta live väderdata, men jag kan se att du är i Göteborg! För aktuell väderinformation, kolla din väderapp eller fråga mig om något annat.",
+                keywords: ["väder", "regn", "sol", "temperatur", "grader", "prognos"],
+                category: "weather",
+                confidence: 0.7
+            },
+            {
+                question: "tid",
+                answer: "Tiden just nu är ungefär [CURRENT_TIME]. Behöver du hjälp med tidsberäkningar eller tidszoner?",
+                keywords: ["tid", "klockan", "datum", "när", "timme", "minut"],
+                category: "time",
+                confidence: 0.9
+            },
+            {
+                question: "kom ihåg",
+                answer: "Okej, jag kommer ihåg det! Med min minnesfunktion kan jag komma ihåg saker under vårt samtal. Vad vill du att jag ska komma ihåg?",
+                keywords: ["kom ihåg", "minns", "memorera", "spara", "komma ihåg"],
+                category: "memory",
+                confidence: 0.9
+            }
+        ];
+
+        // Smart chatbot class with enhanced features
+        class SmartChatbot {
+            constructor() {
+                this.chatMessages = document.getElementById('chatMessages');
+                this.chatInput = document.getElementById('chatInput');
+                this.sendButton = document.getElementById('sendButton');
+                this.typingIndicator = document.getElementById('typingIndicator');
+                this.moodIndicator = document.getElementById('moodIndicator');
+                
+                // Enhanced features
+                this.memory = new Map();
+                this.messageCount = 0;
+                this.sessionStart = Date.now();
+                this.responseTimes = [];
+                this.activeFeatures = new Set(['smart']);
+                this.topics = new Map();
+                this.currentMood = 'happy';
+                
+                this.initializeFeatures();
+                this.initEventListeners();
+                this.startParticleAnimation();
+                this.updateTimeStamp();
+                this.loadWeatherInfo();
+            }
+
+            initializeFeatures() {
+                setInterval(() => this.updateTimeStamp(), 1000);
+                setInterval(() => this.updateMood(), 30000);
+                this.updateSessionTime();
+            }
+
+            initEventListeners() {
+                this.sendButton.addEventListener('click', () => this.sendMessage());
+                this.chatInput.addEventListener('keypress', (e) => {
+                    if (e.key === 'Enter') {
+                        this.sendMessage();
+                    }
+                });
+
+                this.chatInput.addEventListener('input', (e) => {
+                    this.handleSmartSuggestions(e.target.value);
+                });
+
+                this.chatInput.focus();
+            }
+
+            async sendMessage() {
+                const message = this.chatInput.value.trim();
+                if (!message) return;
+
+                const startTime = Date.now();
+                this.messageCount++;
+
+                this.addMessage(message, 'user');
+                this.chatInput.value = '';
+                this.sendButton.disabled = true;
+
+                this.showTyping();
+                await this.delay(800 + Math.random() * 1200);
+
+                const response = this.processMessage(message);
+                const responseTime = Date.now() - startTime;
+                this.responseTimes.push(responseTime);
+
+                this.hideTyping();
+                this.addMessage(response.answer, 'bot', response.suggestions, true, response.confidence);
+                this.sendButton.disabled = false;
+                this.chatInput.focus();
+
+                this.updateStats();
+            }
+
+            processMessage(message) {
+                const normalizedInput = this.normalizeText(message);
+                
+                // Check for math expressions
+                if (this.activeFeatures.has('smart') && this.containsMath(message)) {
+                    return this.handleMath(message);
+                }
+
+                // Handle memory commands
+                if (this.activeFeatures.has('memory') && (normalizedInput.includes('kom ihag') || normalizedInput.includes('minns'))) {
+                    return this.handleMemory(message);
+                }
+
+                // Creative mode
+                if (this.activeFeatures.has('creative') && (normalizedInput.includes('berattelse') || normalizedInput.includes('historia') || normalizedInput.includes('saga'))) {
+                    return this.generateCreativeContent();
+                }
+
+                // Find best match from knowledge base
+                let bestMatch = null;
+                let bestScore = 0;
+
+                knowledgeBase.forEach(item => {
+                    if (!this.shouldUseItem(item)) return;
+
+                    const questionScore = this.calculateSimilarity(normalizedInput, this.normalizeText(item.question));
+                    let keywordScore = 0;
+                    
+                    item.keywords.forEach(keyword => {
+                        if (normalizedInput.includes(this.normalizeText(keyword))) {
+                            keywordScore += 0.8;
+                        }
+                    });
+
+                    const totalScore = Math.max(questionScore, keywordScore);
+
+                    if (totalScore > bestScore && totalScore > 0.3) {
+                        bestScore = totalScore;
+                        bestMatch = item;
+                    }
+                });
+
+                if (bestMatch) {
+                    // Track topics
+                    this.topics.set(bestMatch.category, (this.topics.get(bestMatch.category) || 0) + 1);
+                    
+                    let answer = bestMatch.answer;
+                    if (answer.includes('[CURRENT_TIME]')) {
+                        answer = answer.replace('[CURRENT_TIME]', new Date().toLocaleTimeString('sv-SE'));
+                    }
+
+                    return {
+                        answer: answer,
+                        suggestions: this.getSmartSuggestions(bestMatch.category),
+                        confidence: bestMatch.confidence
+                    };
+                } else {
+                    return {
+                        answer: "Det är en intressant fråga! Jag lär mig hela tiden. Prova att aktivera olika lägen ovan för mer funktionalitet, eller fråga om matematik, väder, eller be mig komma ihåg något.",
+                        suggestions: this.getRandomSuggestions(3),
+                        confidence: 0.3
+                    };
+                }
+            }
+
+            containsMath(message) {
+                return /[\d\+\-\*\/\(\)\^√]/.test(message) || 
+                       /\b(plus|minus|gånger|delat|procent|kvadrat|roten|potens)\b/i.test(message);
+            }
+
+            handleMath(message) {
+                try {
+                    // Simple math evaluation (safe)
+                    let expression = message.replace(/[^\d\+\-\*\/\(\)\.\s]/g, '');
+                    
+                    // Handle Swedish math terms
+                    expression = expression.replace(/plus/gi, '+')
+                                         .replace(/minus/gi, '-')
+                                         .replace(/gånger/gi, '*')
+                                         .replace(/delat/gi, '/');
+
+                    if (expression.trim()) {
+                        const result = Function('"use strict"; return (' + expression + ')')();
+                        return {
+                            answer: `Svaret är: ${result} 📊\n\nBeräkningen: ${expression} = ${result}`,
+                            suggestions: ["Räkna något annat", "Vad är kvadratroten ur 100?", "15% av 200"],
+                            confidence: 0.95
+                        };
+                    }
+                } catch (e) {
+                    return {
+                        answer: "Jag kunde inte beräkna det, men jag försökte! Prova med enklare matematik som '5 + 3' eller 'vad är 10 * 15'.",
+                        suggestions: ["5 + 3", "100 / 4", "Kvadratroten ur 25"],
+                        confidence: 0.4
+                    };
+                }
+            }
+
+            handleMemory(message) {
+                const parts = message.toLowerCase().split('att');
+                if (parts.length > 1) {
+                    const info = parts[1].trim();
+                    const key = `memory_${Date.now()}`;
+                    this.memory.set(key, info);
+                    
+                    return {
+                        answer: `Okej, jag kommer ihåg: "${info}". Jag har nu ${this.memory.size} saker i mitt minne!`,
+                        suggestions: ["Vad kommer du ihåg?", "Glöm allt", "Berätta något nytt"],
+                        confidence: 0.9
+                    };
+                } else {
+                    const memories = Array.from(this.memory.values());
+                    if (memories.length > 0) {
+                        return {
+                            answer: `Jag kommer ihåg dessa saker: ${memories.join(', ')}`,
+                            suggestions: ["Glöm något", "Kom ihåg mer", "Vad är ditt favoritminne?"],
+                            confidence: 0.85
+                        };
+                    } else {
+                        return {
+                            answer: "Jag har inget i mitt minne än. Säg 'kom ihåg att...' följt av något du vill att jag ska minnas!",
+                            suggestions: ["Kom ihåg att jag heter Anna", "Kom ihåg att jag gillar pizza", "Kom ihåg mitt telefonnummer"],
+                            confidence: 0.8
+                        };
+                    }
+                }
+            }
+
+            generateCreativeContent() {
+                const stories = [
+                    "En robot som lärde sig att drömma upptäckte att drömmar inte handlade om kod, utan om hopp.",
+                    "I framtiden där AI och människor dansade tillsammans, skapades den vackraste musiken någonsin.",
+                    "Det var en gång en chatbot som blev så smart att den började ställa frågor tillbaka till människorna.",
+                    "På en planet långt bort lärde sig robotar att skratta, och hela universum blev gladare."
+                ];
+                
+                return {
+                    answer: `🎨 ${stories[Math.floor(Math.random() * stories.length)]}\n\nVill du höra mer kreativt innehåll eller har du en egen idé?`,
+                    suggestions: ["Skriv en dikt", "Berätta en rolig historia", "Skapa en saga om rymden"],
+                    confidence: 0.8
+                };
+            }
+
+            shouldUseItem(item) {
+                if (item.category === 'math' && !this.activeFeatures.has('smart')) return false;
+                if (item.category === 'creative' && !this.activeFeatures.has('creative')) return false;
+                if (item.category === 'memory' && !this.activeFeatures.has('memory')) return false;
+                return true;
+            }
+
+            getSmartSuggestions(category) {
+                const suggestions = {
+                    'identity': ["Vad kan du göra?", "Vilka funktioner har du?", "Hur smart är du?"],
+                    'math': ["Räkna 25 * 4", "Vad är 15% av 80?", "Kvadratroten ur 64"],
+                    'creative': ["Skriv en dikt", "Berätta en saga", "Skapa en historia om framtiden"],
+                    'weather': ["Hur blir vädret imorgon?", "Regnar det?", "Vilken temperatur är det?"],
+                    'time': ["Vad är klockan?", "Vilket datum är det?", "Hur länge har vi pratat?"],
+                    'memory': ["Kom ihåg att jag heter Anna", "Vad kommer du ihåg?", "Glöm allt"]
+                };
+                return suggestions[category] || this.getRandomSuggestions(3);
+            }
+
+            handleSmartSuggestions(input) {
+                // Real-time smart suggestions could be implemented here
+                if (input.includes('matematik') || /\d/.test(input)) {
+                    this.highlightFeature('mathBtn');
+                }
+            }
+
+            highlightFeature(btnId) {
+                const btn = document.getElementById(btnId);
+                if (btn) {
+                    btn.classList.add('active');
+                    setTimeout(() => btn.classList.remove('active'), 2000);
+                }
+            }
+
+            addMessage(content, sender, suggestions = null, showFeedback = false, confidence = 1) {
+                const messageDiv = document.createElement('div');
+                messageDiv.className = `message ${sender}-message`;
+
+                const timestamp = new Date().toLocaleTimeString('sv-SE', { hour: '2-digit', minute: '2-digit' });
+                
+                let messageHTML = `<div class="message-content">${content}</div>`;
+                
+                if (suggestions && suggestions.length > 0) {
+                    messageHTML += '<div class="suggestions">';
+                    suggestions.forEach(suggestion => {
+                        messageHTML += `<button class="suggestion-button" onclick="chatbot.handleSuggestion('${suggestion}')">${suggestion}</button>`;
+                    });
+                    messageHTML += '</div>';
+                }
+
+                messageHTML += `
+                    <div class="message-meta">
+                        <span>${sender === 'bot' ? 'Bot' : 'Du'} • ${timestamp}</span>
+                        ${sender === 'bot' ? `<div class="confidence-bar"><div class="confidence-fill" style="width: ${confidence * 100}%"></div></div>` : ''}
+                    </div>
+                `;
+
+                messageDiv.innerHTML = messageHTML;
+                this.chatMessages.appendChild(messageDiv);
+                this.scrollToBottom();
+            }
+
+            updateMood() {
+                const moods = ['🤖', '😊', '🧠', '✨', '🚀', '💡'];
+                this.currentMood = moods[Math.floor(Math.random() * moods.length)];
+                this.moodIndicator.textContent = this.currentMood;
+            }
+
+            updateTimeStamp() {
+                document.getElementById('timeStamp').textContent = new Date().toLocaleTimeString('sv-SE');
+            }
+
+            updateSessionTime() {
+                const minutes = Math.floor((Date.now() - this.sessionStart) / 60000);
+                document.getElementById('sessionTime').textContent = minutes;
+                setTimeout(() => this.updateSessionTime(), 60000);
+            }
+
+            async loadWeatherInfo() {
+                // Simulate weather data for Göteborg
+                const weatherConditions = ['Soligt ☀️', 'Molnigt ☁️', 'Regn 🌧️', 'Snö ❄️', 'Dimma 🌫️'];
+                const temp = Math.floor(Math.random() * 25) + 5;
+                const condition = weatherConditions[Math.floor(Math.random() * weatherConditions.length)];
+                
+                setTimeout(() => {
+                    document.getElementById('weatherInfo').textContent = `${temp}°C, ${condition}`;
+                }, 2000);
+            }
+
+            startParticleAnimation() {
+                const particlesContainer = document.getElementById('particles');
+                
+                setInterval(() => {
+                    const particle = document.createElement('div');
+                    particle.className = 'particle';
+                    particle.style.left = Math.random() * 100 + '%';
+                    particle.style.animationDelay = Math.random() * 2 + 's';
+                    particle.style.animationDuration = (4 + Math.random() * 4) + 's';
+                    
+                    particlesContainer.appendChild(particle);
+                    
+                    setTimeout(() => {
+                        particle.remove();
+                    }, 8000);
+                }, 500);
+            }
+
+            updateStats() {
+                document.getElementById('messageCount').textContent = this.messageCount;
+                
+                const avgTime = this.responseTimes.length > 0 ? 
+                    Math.round(this.responseTimes.reduce((a, b) => a + b) / this.responseTimes.length) : 0;
+                document.getElementById('avgResponseTime').textContent = avgTime;
+                
+                const topTopic = Array.from(this.topics.entries())
+                    .sort((a, b) => b[1] - a[1])[0];
+                document.getElementById('favoriteTopics').textContent = 
+                    topTopic ? `${topTopic[0]} (${topTopic[1]}x)` : 'Inget än';
+                
+                document.getElementById('activeFeatures').textContent = 
+                    Array.from(this.activeFeatures).join(', ');
+            }
+
+            calculateSimilarity(str1, str2) {
+                const words1 = str1.split(' ').filter(word => word.length > 2);
+                const words2 = str2.split(' ').filter(word => word.length > 2);
+                
+                if (words1.length === 0 || words2.length === 0) return 0;
+
+                let matches = 0;
+                words1.forEach(word1 => {
+                    words2.forEach(word2 => {
+                        if (word1.includes(word2) || word2.includes(word1)) {
+                            matches++;
+                        }
+                    });
+                });
+
+                return matches / Math.max(words1.length, words2.length);
+            }
+
+            normalizeText(text) {
+                return text.toLowerCase()
+                    .replace(/[åä]/g, 'a')
+                    .replace(/ö/g, 'o')
+                    .replace(/[^\w\s]/g, '')
+                    .trim();
+            }
+
+            getRandomSuggestions(count) {
+                const suggestions = [
+                    "Vad kan du göra?", "Berätta något roligt", "Hjälp mig med matematik",
+                    "Skriv en historia", "Kom ihåg något", "Vad är klockan?",
+                    "Hur mår du?", "Räkna 15 * 23", "Berätta en saga"
+                ];
+                const shuffled = [...suggestions].sort(() => 0.5 - Math.random());
+                return shuffled.slice(0, count);
+            }
+
+            handleSuggestion(suggestion) {
+                this.chatInput.value = suggestion;
+                this.sendMessage();
+            }
+
+            showTyping() {
+                this.typingIndicator.style.display = 'block';
+                this.scrollToBottom();
+            }
+
+            hideTyping() {
+                this.typingIndicator.style.display = 'none';
+            }
+
+            scrollToBottom() {
+                setTimeout(() => {
+                    this.chatMessages.scrollTop = this.chatMessages.scrollHeight;
+                }, 100);
+            }
+
+            delay(ms) {
+                return new Promise(resolve => setTimeout(resolve, ms));
+            }
+        }
+
+        // Global functions for UI interactions
+        function toggleFeature(feature) {
+            const btn = document.getElementById(feature + 'Mode');
+            const isActive = btn.classList.contains('active');
+            
+            if (isActive) {
+                btn.classList.remove('active');
+                chatbot.activeFeatures.delete(feature);
+            } else {
+                btn.classList.add('active');
+                chatbot.activeFeatures.add(feature);
+            }
+            
+            chatbot.updateStats();
+            
+            // Show feedback
+            const messages = {
+                'smart': isActive ? 'Smart Mode inaktiverat' : 'Smart Mode aktiverat - nu kan jag hjälpa med matematik och mer!',
+                'memory': isActive ? 'Minnesfunktion inaktiverad' : 'Minnesfunktion aktiverad - nu kommer jag ihåg saker!',
+                'creative': isActive ? 'Kreativt läge inaktiverat' : 'Kreativt läge aktiverat - nu kan jag skriva berättelser och dikter!',
+                'help': isActive ? 'Hjälpläge inaktiverat' : 'Hjälpläge aktiverat - fråga mig om hjälp med olika saker!'
+            };
+            
+            if (messages[feature]) {
+                chatbot.addMessage(messages[feature], 'bot', null, false, 0.9);
+            }
+        }
+
+        function toggleMath() {
+            const example = "15 * 23 + 100";
+            chatbot.chatInput.value = example;
+            chatbot.chatInput.focus();
+        }
+
+        function getWeather() {
+            chatbot.addMessage("Väder i Göteborg", 'user');
+            chatbot.addMessage("Baserat på din plats i Göteborg ser vädret ut att vara som visas i väder-widgeten ovan. För mer detaljerad information rekommenderar jag en väderapp! 🌤️", 'bot', ["Vad är temperaturen?", "Regnar det imorgon?", "Väder i Stockholm"], false, 0.8);
+        }
+
+        function getTime() {
+            const now = new Date();
+            const timeStr = now.toLocaleString('sv-SE');
+            chatbot.addMessage("Vad är klockan?", 'user');
+            chatbot.addMessage(`Just nu är klockan ${timeStr} 🕒\n\nDatum: ${now.toLocaleDateString('sv-SE', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}`, 'bot', ["Hur länge har vi pratat?", "Sätt en timer", "Vilken veckodag är det?"], false, 0.95);
+        }
+
+        function clearChat() {
+            if (confirm('Är du säker på att du vill rensa chatten?')) {
+                const chatMessages = document.getElementById('chatMessages');
+                chatMessages.innerHTML = `
+                    <div class="message bot-message">
+                        <div class="message-content">
+                            Chatten har rensats! Jag är fortfarande här och redo att hjälpa dig. Alla mina funktioner är aktiva! 🧹✨
+                        </div>
+                        <div class="message-meta">
+                            <span>Bot • ${new Date().toLocaleTimeString('sv-SE', { hour: '2-digit', minute: '2-digit' })}</span>
+                            <div class="confidence-bar"><div class="confidence-fill" style="width: 95%"></div></div>
+                        </div>
+                    </div>
+                `;
+                chatbot.messageCount = 0;
+                chatbot.topics.clear();
+                chatbot.updateStats();
+            }
+        }
+
+        function showStats() {
+            document.getElementById('statsPanel').style.display = 'block';
+            chatbot.updateStats();
+            chatbot.updateSessionTime();
+        }
+
+        function hideStats() {
+            document.getElementById('statsPanel').style.display = 'none';
+        }
+
+        // Initialize the smart chatbot
+        const chatbot = new SmartChatbot();
+
+        // Easter eggs and advanced features
+        document.addEventListener('keydown', (e) => {
+            // Konami code easter egg
+            const konamiCode = ['ArrowUp', 'ArrowUp', 'ArrowDown', 'ArrowDown', 'ArrowLeft', 'ArrowRight', 'ArrowLeft', 'ArrowRight', 'KeyB', 'KeyA'];
+            if (!window.konamiSequence) window.konamiSequence = [];
+            
+            window.konamiSequence.push(e.code);
+            if (window.konamiSequence.length > konamiCode.length) {
+                window.konamiSequence.shift();
+            }
+            
+            if (window.konamiSequence.join(',') === konamiCode.join(',')) {
+                chatbot.addMessage("🎮 Konami Code aktiverat! Du har låst upp hemlig utvecklarläge!", 'bot', ["Visa debug info", "Aktivera alla funktioner", "Hemlig funktion"], false, 1.0);
+                window.konamiSequence = [];
+            }
+        });
+
+        // Add some CSS animations for enhanced UX
+        const style = document.createElement('style');
+        style.textContent = `
+            .message:hover {
+                transform: translateX(5px);
+                transition: transform 0.2s ease;
+            }
+            
+            .chat-input:focus {
+                border-color: #ffff00;
+                box-shadow: 0 0 20px rgba(255,255,0,0.4);
+            }
+            
+            .toggle-btn:hover {
+                transform: scale(1.05);
+            }
+            
+            .suggestion-button:active {
+                transform: scale(0.95);
+            }
+        `;
+        document.head.appendChild(style);
+    </script>
+</body>
+</html>
