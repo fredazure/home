@@ -1,0 +1,721 @@
+<!DOCTYPE html>
+<html lang="sv">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Min Blogg - Inkorg</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: #f5f5f5;
+            height: 100vh;
+            overflow: hidden;
+        }
+
+        .email-client {
+            display: flex;
+            height: 100vh;
+            background: white;
+        }
+
+        /* Sidebar */
+        .sidebar {
+            width: 250px;
+            background: #2c3e50;
+            color: white;
+            padding: 20px 0;
+            border-right: 1px solid #ddd;
+        }
+
+        .sidebar h1 {
+            padding: 0 20px 20px;
+            font-size: 18px;
+            font-weight: 600;
+            border-bottom: 1px solid #34495e;
+            margin-bottom: 20px;
+        }
+
+        .folder-list {
+            list-style: none;
+        }
+
+        .folder-list li {
+            padding: 12px 20px;
+            cursor: pointer;
+            transition: background 0.2s;
+            border-left: 3px solid transparent;
+        }
+
+        .folder-list li:hover {
+            background: #34495e;
+        }
+
+        .folder-list li.active {
+            background: #3498db;
+            border-left-color: #2980b9;
+        }
+
+        .folder-list li i {
+            margin-right: 10px;
+            width: 16px;
+        }
+
+        /* Email List */
+        .email-list {
+            width: 400px;
+            background: #fafafa;
+            border-right: 1px solid #ddd;
+            overflow-y: auto;
+        }
+
+        .search-bar {
+            padding: 15px;
+            border-bottom: 1px solid #ddd;
+            background: white;
+        }
+
+        .search-bar input {
+            width: 100%;
+            padding: 8px 12px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-size: 14px;
+        }
+
+        .email-item {
+            padding: 15px;
+            border-bottom: 1px solid #eee;
+            cursor: pointer;
+            transition: background 0.2s;
+            background: white;
+            margin-bottom: 2px;
+        }
+
+        .email-item:hover {
+            background: #f8f9fa;
+        }
+
+        .email-item.selected {
+            background: #e3f2fd;
+            border-left: 3px solid #2196f3;
+        }
+
+        .email-item.unread {
+            font-weight: 600;
+            background: #fff;
+        }
+
+        .email-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 5px;
+        }
+
+        .sender {
+            font-weight: 600;
+            color: #333;
+        }
+
+        .date {
+            font-size: 12px;
+            color: #666;
+        }
+
+        .subject {
+            font-size: 14px;
+            color: #333;
+            margin-bottom: 5px;
+        }
+
+        .preview {
+            font-size: 12px;
+            color: #666;
+            line-height: 1.4;
+        }
+
+        .category-tag {
+            display: inline-block;
+            padding: 2px 6px;
+            background: #e8f4f8;
+            color: #2196f3;
+            font-size: 10px;
+            border-radius: 10px;
+            margin-top: 5px;
+        }
+
+        /* Email Content */
+        .email-content {
+            flex: 1;
+            background: white;
+            overflow-y: auto;
+        }
+
+        .content-header {
+            padding: 20px;
+            border-bottom: 1px solid #eee;
+            background: #f9f9f9;
+        }
+
+        .content-subject {
+            font-size: 24px;
+            font-weight: 600;
+            margin-bottom: 10px;
+            color: #333;
+        }
+
+        .content-meta {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            color: #666;
+            font-size: 14px;
+        }
+
+        .author-info {
+            display: flex;
+            align-items: center;
+        }
+
+        .avatar {
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            background: #3498db;
+            color: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-right: 10px;
+            font-weight: 600;
+        }
+
+        .content-body {
+            padding: 30px;
+            line-height: 1.6;
+            color: #333;
+            max-width: none;
+        }
+
+        .content-body h2 {
+            color: #2c3e50;
+            margin: 25px 0 15px;
+            font-size: 20px;
+        }
+
+        .content-body h3 {
+            color: #34495e;
+            margin: 20px 0 10px;
+            font-size: 16px;
+        }
+
+        .content-body p {
+            margin-bottom: 15px;
+        }
+
+        .content-body code {
+            background: #f8f9fa;
+            padding: 2px 6px;
+            border-radius: 3px;
+            font-family: 'Monaco', 'Menlo', monospace;
+            font-size: 13px;
+        }
+
+        .content-body pre {
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 5px;
+            border-left: 4px solid #3498db;
+            overflow-x: auto;
+            margin: 15px 0;
+        }
+
+        .content-body blockquote {
+            border-left: 4px solid #3498db;
+            padding-left: 15px;
+            margin: 15px 0;
+            color: #666;
+            font-style: italic;
+        }
+
+        .toolbar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 10px 20px;
+            background: #f9f9f9;
+            border-bottom: 1px solid #eee;
+        }
+
+        .toolbar-left, .toolbar-right {
+            display: flex;
+            gap: 10px;
+        }
+
+        .btn {
+            padding: 6px 12px;
+            border: 1px solid #ddd;
+            background: white;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 12px;
+            transition: all 0.2s;
+        }
+
+        .btn:hover {
+            background: #f0f0f0;
+        }
+
+        .btn.primary {
+            background: #3498db;
+            color: white;
+            border-color: #2980b9;
+        }
+
+        .btn.primary:hover {
+            background: #2980b9;
+        }
+
+        .empty-state {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100%;
+            color: #666;
+            text-align: center;
+        }
+
+        .empty-state i {
+            font-size: 48px;
+            margin-bottom: 20px;
+            color: #bbb;
+        }
+
+        .tags {
+            margin-top: 10px;
+        }
+
+        .tag {
+            display: inline-block;
+            padding: 2px 8px;
+            background: #e8f4f8;
+            color: #2196f3;
+            font-size: 11px;
+            border-radius: 12px;
+            margin-right: 5px;
+        }
+
+        @media (max-width: 768px) {
+            .sidebar {
+                width: 200px;
+            }
+            .email-list {
+                width: 300px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="email-client">
+        <!-- Sidebar -->
+        <div class="sidebar">
+            <h1>📧 Min Blogg</h1>
+            <ul class="folder-list">
+                <li class="active" data-folder="inbox">
+                    <span>📥 Inkorgen</span>
+                </li>
+                <li data-folder="tech">
+                    <span>💻 Teknik</span>
+                </li>
+                <li data-folder="personal">
+                    <span>👤 Personligt</span>
+                </li>
+                <li data-folder="tutorials">
+                    <span>📚 Tutorials</span>
+                </li>
+                <li data-folder="archive">
+                    <span>📦 Arkiv</span>
+                </li>
+            </ul>
+        </div>
+
+        <!-- Email List -->
+        <div class="email-list">
+            <div class="search-bar">
+                <input type="text" placeholder="Sök i blogginlägg..." id="searchInput">
+            </div>
+            <div id="emailList">
+                <!-- Email items will be populated by JavaScript -->
+            </div>
+        </div>
+
+        <!-- Email Content -->
+        <div class="email-content">
+            <div class="toolbar">
+                <div class="toolbar-left">
+                    <button class="btn">↺ Uppdatera</button>
+                    <button class="btn">⭐ Favorit</button>
+                    <button class="btn">🏷️ Taggar</button>
+                </div>
+                <div class="toolbar-right">
+                    <button class="btn primary">✍️ Nytt inlägg</button>
+                </div>
+            </div>
+            <div id="emailContent">
+                <div class="empty-state">
+                    <i>📧</i>
+                    <h3>Välj ett blogginlägg för att läsa</h3>
+                    <p>Klicka på ett inlägg i listan till vänster för att visa innehållet här.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Sample blog posts data
+        const blogPosts = [
+            {
+                id: 1,
+                sender: "Författaren",
+                subject: "Välkommen till min blogg!",
+                date: "Idag",
+                preview: "Hej och välkommen till min nya blogg som ser ut som en e-postklient! Här kommer jag att dela mina tankar om teknik, programmering och livet i allmänhet...",
+                category: "Personligt",
+                folder: "inbox",
+                unread: true,
+                content: `
+                    <h2>Välkommen till min unika blogg!</h2>
+                    <p>Hej och välkommen till min blogg som har fått en helt annorlunda design - den ser ut som en e-postklient! 📧</p>
+                    
+                    <h3>Varför just denna design?</h3>
+                    <p>Jag tyckte det skulle vara kul att experimentera med ett bekant gränssnitt som vi alla använder dagligen. Genom att presentera blogginlägg som e-postmeddelanden får vi en strukturerad och välorganiserad läsupplevelse.</p>
+                    
+                    <h3>Vad kan du förvänta dig?</h3>
+                    <p>Här kommer jag att skriva om:</p>
+                    <ul>
+                        <li>💻 Programmering och webbutveckling</li>
+                        <li>🚀 Nya tekniker och verktyg</li>
+                        <li>📚 Tutorials och guider</li>
+                        <li>💭 Personliga reflektioner</li>
+                    </ul>
+                    
+                    <blockquote>
+                        "Innovation är att se vad alla andra ser och tänka vad ingen annan har tänkt." - Albert Einstein
+                    </blockquote>
+                    
+                    <p>Tack för att du besöker min blogg och jag hoppas du hittar något intressant att läsa!</p>
+                `,
+                tags: ["välkommen", "blogg", "design"]
+            },
+            {
+                id: 2,
+                sender: "Tech Guru",
+                subject: "Introduktion till Modern JavaScript",
+                date: "Igår",
+                preview: "JavaScript har utvecklats enormt de senaste åren. Låt oss utforska ES6+ funktioner som arrow functions, destructuring och async/await...",
+                category: "Teknik",
+                folder: "tech",
+                unread: true,
+                content: `
+                    <h2>Modern JavaScript - En resa genom ES6+</h2>
+                    <p>JavaScript har genomgått en fantastisk transformation sedan ES6 introducerades. Låt oss utforska några av de mest användbara funktionerna.</p>
+                    
+                    <h3>Arrow Functions</h3>
+                    <p>En mer koncis syntax för att skriva funktioner:</p>
+                    <pre><code>// Traditionell funktion
+function add(a, b) {
+    return a + b;
+}
+
+// Arrow function
+const add = (a, b) => a + b;</code></pre>
+                    
+                    <h3>Destructuring</h3>
+                    <p>Gör det enkelt att extrahera värden från arrayer och objekt:</p>
+                    <pre><code>// Objekt destructuring
+const { name, age } = person;
+
+// Array destructuring
+const [first, second] = numbers;</code></pre>
+                    
+                    <h3>Async/Await</h3>
+                    <p>Hanterar asynkron kod på ett mer läsbart sätt:</p>
+                    <pre><code>async function fetchData() {
+    try {
+        const response = await fetch('/api/data');
+        const data = await response.json();
+        return data;
+    } catch (error) {
+        console.error('Fel:', error);
+    }
+}</code></pre>
+                    
+                    <p>Dessa funktioner gör JavaScript mer kraftfullt och lättare att arbeta med. Fortsätt utforska och experimentera!</p>
+                `,
+                tags: ["javascript", "es6", "programmering"]
+            },
+            {
+                id: 3,
+                sender: "Design Expert",
+                subject: "CSS Grid vs Flexbox - När ska man använda vad?",
+                date: "2 dagar sedan",
+                preview: "Både CSS Grid och Flexbox är kraftfulla layout-verktyg, men de har olika användningsområden. Här är en guide för när du ska använda vilket...",
+                category: "Tutorials",
+                folder: "tutorials",
+                unread: false,
+                content: `
+                    <h2>CSS Grid vs Flexbox - Den ultimata guiden</h2>
+                    <p>En av de vanligaste frågorna inom CSS är när man ska använda Grid och när man ska använda Flexbox. Här är svaret!</p>
+                    
+                    <h3>Använd Flexbox när:</h3>
+                    <ul>
+                        <li>Du layoutar objekt i en dimension (rad eller kolumn)</li>
+                        <li>Du vill centrera content</li>
+                        <li>Du har dynamisk content som ska anpassa sig</li>
+                        <li>Du bygger navigationsmenyer</li>
+                    </ul>
+                    
+                    <h3>Använd CSS Grid när:</h3>
+                    <ul>
+                        <li>Du layoutar i två dimensioner (rader OCH kolumner)</li>
+                        <li>Du vill skapa komplexa layouts</li>
+                        <li>Du behöver exakt kontroll över placering</li>
+                        <li>Du bygger hela sidlayouter</li>
+                    </ul>
+                    
+                    <h3>Praktiskt exempel</h3>
+                    <pre><code>/* Flexbox för navigation */
+.nav {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+/* Grid för huvudlayout */
+.layout {
+    display: grid;
+    grid-template-columns: 1fr 3fr 1fr;
+    grid-template-rows: auto 1fr auto;
+    grid-template-areas: 
+        "header header header"
+        "sidebar main aside"
+        "footer footer footer";
+}</code></pre>
+                    
+                    <blockquote>
+                        Kom ihåg: Grid och Flexbox kompletterar varandra - använd båda i samma projekt!
+                    </blockquote>
+                `,
+                tags: ["css", "grid", "flexbox", "layout"]
+            },
+            {
+                id: 4,
+                sender: "Livets Filosof",
+                subject: "Balansen mellan arbete och vila",
+                date: "3 dagar sedan",
+                preview: "Som utvecklare är det lätt att fastna i kodandet, men det är viktigt att komma ihåg vikten av återhämtning och balans...",
+                category: "Personligt",
+                folder: "personal",
+                unread: false,
+                content: `
+                    <h2>Vikten av Work-Life Balance för Utvecklare</h2>
+                    <p>Som utvecklare kan det vara lätt att förlora sig i koden och glömma bort resten av världen. Men balans är nyckeln till långsiktig framgång och välmående.</p>
+                    
+                    <h3>Varför är balans viktigt?</h3>
+                    <ul>
+                        <li>🧠 Förhindrar utbrändhet och mental trötthet</li>
+                        <li>💡 Ger utrymme för kreativitet och nya idéer</li>
+                        <li>❤️ Bibehåller relationer och social hälsa</li>
+                        <li>⚡ Ökar produktiviteten på lång sikt</li>
+                    </ul>
+                    
+                    <h3>Praktiska tips:</h3>
+                    <p><strong>Sätt gränser:</strong> Bestäm fasta arbetstider och håll dig till dem.</p>
+                    <p><strong>Ta riktiga pauser:</strong> Stäng laptopen och gå ut, träffa vänner eller utöva hobbies.</p>
+                    <p><strong>Lär dig säga nej:</strong> Du behöver inte tacka ja till alla projekt och möjligheter.</p>
+                    
+                    <blockquote>
+                        "Det är inte längden på livet som räknas, utan djupet i det." - Ralph Waldo Emerson
+                    </blockquote>
+                    
+                    <p>Kom ihåg att du är mer än din kod. Ta hand om dig själv! 🌱</p>
+                `,
+                tags: ["balans", "hälsa", "utvecklare", "reflektion"]
+            },
+            {
+                id: 5,
+                sender: "Open Source Hero",
+                subject: "Kom igång med Git och GitHub",
+                date: "1 vecka sedan",
+                preview: "Git kan kännas skrämmande för nybörjare, men det är ett ovärderligt verktyg. Här är en steg-för-steg guide för att komma igång...",
+                category: "Tutorials",
+                folder: "tutorials",
+                unread: false,
+                content: `
+                    <h2>Git och GitHub för Nybörjare</h2>
+                    <p>Git är versionskontrollsystemet som alla utvecklare behöver kunna. Här är en grundläggande guide!</p>
+                    
+                    <h3>Grundläggande Git-kommandon</h3>
+                    <pre><code># Initiera ett nytt repository
+git init
+
+# Klona ett befintligt repository  
+git clone https://github.com/user/repo.git
+
+# Lägg till filer för commit
+git add .
+
+# Commit dina ändringar
+git commit -m "Beskrivning av ändring"
+
+# Pusha till remote repository
+git push origin main</code></pre>
+                    
+                    <h3>GitHub Workflow</h3>
+                    <ol>
+                        <li>Forka repositoryt</li>
+                        <li>Klona din fork lokalt</li>
+                        <li>Skapa en ny branch för din feature</li>
+                        <li>Gör dina ändringar och commit</li>
+                        <li>Pusha till din fork</li>
+                        <li>Skapa en Pull Request</li>
+                    </ol>
+                    
+                    <h3>Bästa praxis</h3>
+                    <ul>
+                        <li>Skriv tydliga commit-meddelanden</li>
+                        <li>Commit ofta med små ändringar</li>
+                        <li>Använd beskrivande branch-namn</li>
+                        <li>Testa din kod innan du pushar</li>
+                    </ul>
+                    
+                    <blockquote>
+                        Git sparar inte bara din kod - det sparar din mentala hälsa! 🧠
+                    </blockquote>
+                `,
+                tags: ["git", "github", "versionskontroll", "tutorial"]
+            }
+        ];
+
+        let currentFolder = 'inbox';
+        let selectedPostId = null;
+
+        // Initialize the blog
+        function init() {
+            renderEmailList();
+            setupEventListeners();
+        }
+
+        function renderEmailList() {
+            const emailList = document.getElementById('emailList');
+            const filteredPosts = currentFolder === 'inbox' 
+                ? blogPosts 
+                : blogPosts.filter(post => post.folder === currentFolder);
+            
+            emailList.innerHTML = filteredPosts.map(post => `
+                <div class="email-item ${post.unread ? 'unread' : ''} ${selectedPostId === post.id ? 'selected' : ''}" data-id="${post.id}">
+                    <div class="email-header">
+                        <span class="sender">${post.sender}</span>
+                        <span class="date">${post.date}</span>
+                    </div>
+                    <div class="subject">${post.subject}</div>
+                    <div class="preview">${post.preview}</div>
+                    <div class="category-tag">${post.category}</div>
+                </div>
+            `).join('');
+        }
+
+        function renderEmailContent(post) {
+            const contentArea = document.getElementById('emailContent');
+            const tagsList = post.tags.map(tag => `<span class="tag">#${tag}</span>`).join('');
+            
+            contentArea.innerHTML = `
+                <div class="content-header">
+                    <h1 class="content-subject">${post.subject}</h1>
+                    <div class="content-meta">
+                        <div class="author-info">
+                            <div class="avatar">${post.sender.charAt(0)}</div>
+                            <div>
+                                <strong>${post.sender}</strong><br>
+                                <span>${post.date} • ${post.category}</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="tags">${tagsList}</div>
+                </div>
+                <div class="content-body">
+                    ${post.content}
+                </div>
+            `;
+        }
+
+        function setupEventListeners() {
+            // Folder navigation
+            document.querySelectorAll('.folder-list li').forEach(folder => {
+                folder.addEventListener('click', () => {
+                    document.querySelector('.folder-list li.active').classList.remove('active');
+                    folder.classList.add('active');
+                    currentFolder = folder.dataset.folder;
+                    selectedPostId = null;
+                    renderEmailList();
+                    
+                    // Show empty state
+                    document.getElementById('emailContent').innerHTML = `
+                        <div class="empty-state">
+                            <i>📧</i>
+                            <h3>Välj ett blogginlägg för att läsa</h3>
+                            <p>Klicka på ett inlägg i listan till vänster för att visa innehållet här.</p>
+                        </div>
+                    `;
+                });
+            });
+
+            // Email selection
+            document.addEventListener('click', (e) => {
+                const emailItem = e.target.closest('.email-item');
+                if (emailItem) {
+                    const postId = parseInt(emailItem.dataset.id);
+                    const post = blogPosts.find(p => p.id === postId);
+                    
+                    if (post) {
+                        // Update selection
+                        document.querySelectorAll('.email-item').forEach(item => 
+                            item.classList.remove('selected')
+                        );
+                        emailItem.classList.add('selected');
+                        emailItem.classList.remove('unread');
+                        
+                        selectedPostId = postId;
+                        renderEmailContent(post);
+                    }
+                }
+            });
+
+            // Search functionality
+            document.getElementById('searchInput').addEventListener('input', (e) => {
+                const searchTerm = e.target.value.toLowerCase();
+                const emailItems = document.querySelectorAll('.email-item');
+                
+                emailItems.forEach(item => {
+                    const text = item.textContent.toLowerCase();
+                    if (text.includes(searchTerm)) {
+                        item.style.display = 'block';
+                    } else {
+                        item.style.display = 'none';
+                    }
+                });
+            });
+        }
+
+        // Start the application
+        init();
+    </script>
+</body>
+</html>
