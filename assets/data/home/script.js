@@ -1,3 +1,6 @@
+let listening = false;
+
+const recognition = new (window.SpeechRecognition || window.webkitSpeechRecognition)();
 const output = document.getElementById("output");
 const talkBtn = document.getElementById("talk-btn");
 
@@ -8,23 +11,39 @@ function speak(text) {
   output.textContent = text;
 }
 
+
+recognition.lang = "sv-SE";
+recognition.interimResults = false;
+recognition.maxAlternatives = 1;
+
+recognition.onresult = (event) => {
+  const userSpeech = event.results[0][0].transcript.toLowerCase();
+  handleCommand(userSpeech);
+  listening = false;
+};
+
+recognition.onerror = (event) => {
+  if (event.error === "no-speech") {
+    speak("Jag hörde inget. Försök igen.");
+  } else {
+    speak("Fel: " + event.error);
+  }
+  listening = false;
+};
+
+recognition.onend = () => {
+  if (listening) {
+    recognition.start(); // försök igen
+  }
+};
+
 function listen() {
-  const recognition = new (window.SpeechRecognition || window.webkitSpeechRecognition)();
-  recognition.lang = "sv-SE";
-  recognition.interimResults = false;
-  recognition.maxAlternatives = 1;
-
+  if (listening) return; // undvik dubbelstart
+  listening = true;
   recognition.start();
+  output.textContent = "🎧 Lyssnar...";
+};
 
-  recognition.onresult = (event) => {
-    const userSpeech = event.results[0][0].transcript.toLowerCase();
-    handleCommand(userSpeech);
-  };
-
-  recognition.onerror = () => {
-    speak("Förlåt, jag hörde inte. Försök igen.");
-  };
-}
 
 function handleCommand(command) {
   if (command.includes("väder")) {
