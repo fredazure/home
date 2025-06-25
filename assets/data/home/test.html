@@ -1,0 +1,333 @@
+<!DOCTYPE html>
+<html lang="sv">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Röstassistent - Välkommen</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            color: white;
+            text-align: center;
+        }
+
+        .container {
+            max-width: 600px;
+            padding: 2rem;
+            background: rgba(255, 255, 255, 0.15);
+            border-radius: 20px;
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+        }
+
+        h1 {
+            font-size: 2.5rem;
+            margin-bottom: 1rem;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);
+        }
+
+        .mic-button {
+            width: 120px;
+            height: 120px;
+            border-radius: 50%;
+            border: none;
+            background: linear-gradient(45deg, #ff6b6b, #ee5a24);
+            color: white;
+            font-size: 3rem;
+            cursor: pointer;
+            margin: 2rem auto;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.3s ease;
+            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.3);
+        }
+
+        .mic-button:hover {
+            transform: scale(1.1);
+            box-shadow: 0 12px 35px rgba(0, 0, 0, 0.4);
+        }
+
+        .mic-button.listening {
+            background: linear-gradient(45deg, #26de81, #20bf6b);
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.1); }
+            100% { transform: scale(1); }
+        }
+
+        .status {
+            font-size: 1.2rem;
+            margin: 1rem 0;
+            min-height: 60px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .commands {
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 15px;
+            padding: 1.5rem;
+            margin-top: 2rem;
+            text-align: left;
+        }
+
+        .commands h3 {
+            text-align: center;
+            margin-bottom: 1rem;
+            color: #ffd700;
+        }
+
+        .commands ul {
+            list-style: none;
+        }
+
+        .commands li {
+            margin: 0.5rem 0;
+            padding: 0.5rem;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 8px;
+        }
+
+        .error {
+            color: #ff6b6b;
+            background: rgba(255, 107, 107, 0.2);
+            padding: 1rem;
+            border-radius: 10px;
+            margin: 1rem 0;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🎙️ Röstassistent</h1>
+        <p>Klicka på mikrofonen och prata med mig!</p>
+        
+        <button class="mic-button" id="micButton">
+            🎤
+        </button>
+        
+        <div class="status" id="status">
+            Tryck på mikrofonen för att börja prata
+        </div>
+
+        <div class="commands">
+            <h3>💫 Vad jag kan göra:</h3>
+            <ul>
+                <li>🕐 <strong>"Vad är klockan?"</strong> - Berättar aktuell tid</li>
+                <li>📅 <strong>"Vilket datum är det?"</strong> - Berättar dagens datum</li>
+                <li>🧮 <strong>"Räkna ut..."</strong> - Enkla matematiska beräkningar</li>
+                <li>🎲 <strong>"Slå tärning"</strong> - Slumpar ett nummer 1-6</li>
+                <li>💡 <strong>"Berätta ett skämt"</strong> - Berättar ett roligt skämt</li>
+                <li>🌈 <strong>"Byt färg"</strong> - Ändrar bakgrundsfärg</li>
+                <li>❓ <strong>"Hjälp"</strong> - Upprepar vad jag kan göra</li>
+            </ul>
+        </div>
+    </div>
+
+    <script>
+        class VoiceAssistant {
+            constructor() {
+                this.recognition = null;
+                this.synthesis = window.speechSynthesis;
+                this.isListening = false;
+                this.micButton = document.getElementById('micButton');
+                this.status = document.getElementById('status');
+                
+                this.jokes = [
+                    "Varför gick tomaten till doktorn? För att den var röd i ansiktet!",
+                    "Vad säger en fisk när den simmar in i en vägg? Dam!",
+                    "Varför kan inte cyklar stå upp själva? För att de är två-trötta!",
+                    "Vad kallas en sovande tjur? En bulldozer!"
+                ];
+
+                this.colors = [
+                    'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+                    'linear-gradient(135deg, #f093fb 0%, #f5576c 100%)',
+                    'linear-gradient(135deg, #4facfe 0%, #00f2fe 100%)',
+                    'linear-gradient(135deg, #43e97b 0%, #38f9d7 100%)',
+                    'linear-gradient(135deg, #fa709a 0%, #fee140 100%)'
+                ];
+
+                this.init();
+            }
+
+            init() {
+                if (!('webkitSpeechRecognition' in window) && !('SpeechRecognition' in window)) {
+                    this.showError('Din webbläsare stöder inte röstigenkänning. Prova Chrome eller Firefox.');
+                    return;
+                }
+
+                this.setupSpeechRecognition();
+                this.micButton.addEventListener('click', () => this.toggleListening());
+                
+                // Välkomstmeddelande
+                this.speak("Hej och välkommen! Jag är din röstassistent. Klicka på mikrofonen och berätta vad du vill göra.");
+            }
+
+            setupSpeechRecognition() {
+                const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+                this.recognition = new SpeechRecognition();
+                
+                this.recognition.lang = 'sv-SE';
+                this.recognition.continuous = false;
+                this.recognition.interimResults = false;
+
+                this.recognition.onstart = () => {
+                    this.isListening = true;
+                    this.micButton.classList.add('listening');
+                    this.micButton.textContent = '🔴';
+                    this.status.textContent = 'Lyssnar... Prata nu!';
+                };
+
+                this.recognition.onend = () => {
+                    this.isListening = false;
+                    this.micButton.classList.remove('listening');
+                    this.micButton.textContent = '🎤';
+                    this.status.textContent = 'Tryck på mikrofonen för att prata igen';
+                };
+
+                this.recognition.onresult = (event) => {
+                    const command = event.results[0][0].transcript.toLowerCase();
+                    this.status.textContent = `Du sa: "${command}"`;
+                    this.processCommand(command);
+                };
+
+                this.recognition.onerror = (event) => {
+                    this.showError(`Fel vid röstigenkänning: ${event.error}`);
+                };
+            }
+
+            toggleListening() {
+                if (this.isListening) {
+                    this.recognition.stop();
+                } else {
+                    this.recognition.start();
+                }
+            }
+
+            processCommand(command) {
+                if (command.includes('klockan') || command.includes('tid')) {
+                    const time = new Date().toLocaleTimeString('sv-SE');
+                    this.speak(`Klockan är ${time}`);
+                    
+                } else if (command.includes('datum') || command.includes('dag')) {
+                    const date = new Date().toLocaleDateString('sv-SE', { 
+                        weekday: 'long', 
+                        year: 'numeric', 
+                        month: 'long', 
+                        day: 'numeric' 
+                    });
+                    this.speak(`Idag är det ${date}`);
+                    
+                } else if (command.includes('räkna') || command.includes('plus') || command.includes('minus') || command.includes('gånger') || command.includes('delat')) {
+                    this.handleMath(command);
+                    
+                } else if (command.includes('tärning') || command.includes('slumpa')) {
+                    const number = Math.floor(Math.random() * 6) + 1;
+                    this.speak(`Tärningen visar ${number}!`);
+                    
+                } else if (command.includes('skämt') || command.includes('roligt')) {
+                    const joke = this.jokes[Math.floor(Math.random() * this.jokes.length)];
+                    this.speak(joke);
+                    
+                } else if (command.includes('färg') || command.includes('byt')) {
+                    const color = this.colors[Math.floor(Math.random() * this.colors.length)];
+                    document.body.style.background = color;
+                    this.speak('Där ja! Ny färg på bakgrunden!');
+                    
+                } else if (command.includes('hjälp') || command.includes('vad kan du')) {
+                    this.speak('Jag kan berätta tiden, dagens datum, räkna ut matematik, slå tärning, berätta skämt, byta bakgrundsfärg och hjälpa dig. Bara prata med mig!');
+                    
+                } else {
+                    this.speak('Förlåt, jag förstod inte riktigt vad du ville. Säg "hjälp" för att höra vad jag kan göra.');
+                }
+            }
+
+            handleMath(command) {
+                try {
+                    // Enkel matematisk tolkning
+                    let expression = command
+                        .replace(/plus/g, '+')
+                        .replace(/minus/g, '-')
+                        .replace(/gånger/g, '*')
+                        .replace(/delat med/g, '/')
+                        .replace(/[^\d+\-*/\s]/g, '');
+
+                    // Extrahera nummer och operatorer
+                    const numbers = expression.match(/\d+/g);
+                    const operators = expression.match(/[+\-*/]/g);
+
+                    if (numbers && numbers.length >= 2 && operators && operators.length >= 1) {
+                        let result = parseInt(numbers[0]);
+                        for (let i = 0; i < operators.length && i + 1 < numbers.length; i++) {
+                            const nextNum = parseInt(numbers[i + 1]);
+                            switch (operators[i]) {
+                                case '+': result += nextNum; break;
+                                case '-': result -= nextNum; break;
+                                case '*': result *= nextNum; break;
+                                case '/': result = Math.round(result / nextNum * 100) / 100; break;
+                            }
+                        }
+                        this.speak(`Svaret är ${result}`);
+                    } else {
+                        this.speak('Jag kunde inte förstå den matematiska uppgiften. Prova att säga något som "fem plus tre" eller "tio minus fyra".');
+                    }
+                } catch (error) {
+                    this.speak('Något gick fel med beräkningen. Prova igen!');
+                }
+            }
+
+            speak(text) {
+                // Stoppa eventuell pågående tal
+                this.synthesis.cancel();
+                
+                const utterance = new SpeechSynthesisUtterance(text);
+                utterance.lang = 'sv-SE';
+                utterance.rate = 0.9;
+                utterance.pitch = 1.1;
+                
+                // Försök hitta svensk röst
+                const voices = this.synthesis.getVoices();
+                const swedishVoice = voices.find(voice => voice.lang.includes('sv'));
+                if (swedishVoice) {
+                    utterance.voice = swedishVoice;
+                }
+
+                this.synthesis.speak(utterance);
+            }
+
+            showError(message) {
+                this.status.innerHTML = `<div class="error">${message}</div>`;
+            }
+        }
+
+        // Vänta tills röster är laddade
+        window.addEventListener('load', () => {
+            if (speechSynthesis.getVoices().length === 0) {
+                speechSynthesis.addEventListener('voiceschanged', () => {
+                    new VoiceAssistant();
+                });
+            } else {
+                new VoiceAssistant();
+            }
+        });
+    </script>
+</body>
+</html>
